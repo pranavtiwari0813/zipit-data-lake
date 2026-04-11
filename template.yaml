@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ZIPIT Food Delivery Data Lake - GLA University 2026
+
+Parameters:
+  AlertEmail:
+    Type: String
+    Default: youremail@gmail.com
+
+Resources:
+
+  ZIPITGlueDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: zipit_db_cf
+        Description: ZIPIT Food Delivery Data Lake
+
+  ZIPITAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: zipit-alerts-cf
+      Subscription:
+        - Protocol: email
+          Endpoint: !Ref AlertEmail
+
+  ZIPITMonitorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: ZIPIT-DataLake-CF-Monitor
+      AlarmDescription: ZIPIT data lake monitoring
+      Namespace: AWS/S3
+      MetricName: NumberOfObjects
+      Dimensions:
+        - Name: BucketName
+          Value: zipit-datalake-2026
+        - Name: StorageType
+          Value: AllStorageTypes
+      Statistic: Average
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  GlueDatabase:
+    Value: !Ref ZIPITGlueDatabase
+    Description: Glue Data Catalog Database
+  AlertTopicArn:
+    Value: !Ref ZIPITAlertTopic
+    Description: SNS Alert Topic for pipeline alerts
